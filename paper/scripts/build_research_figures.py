@@ -95,7 +95,7 @@ def draw_card(ax, x, y, w, h, title, subtitle="", body_lines=None, border_color=
         zorder=2
     )
     ax.add_patch(box)
-    
+
     # Collect non-empty text lines
     lines = []
     if title:
@@ -106,11 +106,11 @@ def draw_card(ax, x, y, w, h, title, subtitle="", body_lines=None, border_color=
         for b in body_lines:
             if b:
                 lines.append(("body", b))
-                
+
     n = len(lines)
     if n == 0:
         return
-        
+
     y_step = h / (n + 1)
     for idx, (kind, text) in enumerate(lines):
         y_pos = y + h - (idx + 1) * y_step
@@ -159,18 +159,18 @@ def generate_fig01_srlinear_architecture() -> None:
     ax.set_xlim(0, 7.1)
     ax.set_ylim(0, 2.75)
     ax.axis("off")
-    
+
     # Column 1: Inputs (x = 0.15, w = 1.35)
     draw_card(ax, 0.15, 1.85, 1.35, 0.72, "Seasonal Anchors",
               subtitle=r"$A_k \in \mathbb{R}^{K \times C}$",
               body_lines=["24h, 168h Causal Lags"],
               border_color="#94a3b8", bg_color="#f8fafc", title_size=7.2)
-              
+
     draw_card(ax, 0.15, 1.00, 1.35, 0.72, "Context Features",
               subtitle=r"$F_t \in \mathbb{R}^d$",
               body_lines=["Hour, Day, Trend"],
               border_color="#94a3b8", bg_color="#f8fafc", title_size=7.2)
-              
+
     draw_card(ax, 0.15, 0.15, 1.35, 0.72, "Usage History",
               subtitle=r"$X_{1:L} \in \mathbb{R}^{L \times C}$",
               body_lines=["L=672h, 28 Orgs"],
@@ -181,12 +181,12 @@ def generate_fig01_srlinear_architecture() -> None:
               subtitle=r"$g = \mathrm{Softmax}(W_g F_t + b_g)$",
               body_lines=["Adaptive Anchor Mix"],
               border_color="#d73027", bg_color="#fff8f8", lw=1.1, title_color="#991b1b", title_size=7.2)
-              
+
     draw_card(ax, 1.85, 1.00, 1.55, 0.72, "Linear Residuals",
               subtitle=r"$R_{\mathrm{org}} = W_o F_t + b_o$",
               body_lines=[r"$R_{\mathrm{pool}} = W_p F_t + b_p$"],
               border_color="#d73027", bg_color="#fff8f8", lw=1.1, title_color="#991b1b", title_size=7.2)
-              
+
     draw_card(ax, 1.85, 0.15, 1.55, 0.72, "Variance Head",
               subtitle=r"$h_o = W_v F_t + b_v$",
               body_lines=["Heteroscedastic Scale"],
@@ -197,12 +197,12 @@ def generate_fig01_srlinear_architecture() -> None:
               subtitle=r"$X_{\mathrm{base}} = \sum_k g_k A_k$",
               body_lines=["Causal Anchor Mix"],
               border_color="#94a3b8", bg_color="#f8fafc", title_size=7.2)
-              
+
     draw_card(ax, 3.80, 1.00, 1.55, 0.72, "Coherent Reconciler",
               subtitle=r"$\hat{\mu}_o = \mathrm{Reconcile}(\cdot)$",
               body_lines=["Exact Pool Hierarchy"],
               border_color="#d73027", bg_color="#fff8f8", lw=1.1, title_color="#991b1b", title_size=7.2)
-              
+
     draw_card(ax, 3.80, 0.15, 1.55, 0.72, "Uncertainty Scale",
               subtitle=r"$\hat{\sigma}_o = \mathrm{Softplus}(h_o)$",
               body_lines=["Residual Volatility"],
@@ -218,22 +218,22 @@ def generate_fig01_srlinear_architecture() -> None:
     # Connections
     # Anchors -> Seasonal Base (over top margin)
     draw_orthogonal(ax, [(0.825, 2.57), (0.825, 2.68), (4.575, 2.68), (4.575, 2.57)], color="#334155", lw=0.9)
-    
+
     # Context Features -> Bus -> Gating, Residuals, Variance Head
     draw_orthogonal(ax, [(1.50, 1.36), (1.68, 1.36)], color="#334155", lw=0.9, arrow=False)
     draw_orthogonal(ax, [(1.68, 2.21), (1.68, 0.51)], color="#334155", lw=0.9, arrow=False)
     draw_orthogonal(ax, [(1.68, 2.21), (1.85, 2.21)], color="#334155", lw=0.9)
     draw_orthogonal(ax, [(1.68, 1.36), (1.85, 1.36)], color="#334155", lw=0.9)
     draw_orthogonal(ax, [(1.68, 0.51), (1.85, 0.51)], color="#334155", lw=0.9)
-    
+
     # Column 2 -> Column 3
     draw_orthogonal(ax, [(3.40, 2.21), (3.80, 2.21)], color="#334155", lw=0.9)
     draw_orthogonal(ax, [(3.40, 1.36), (3.80, 1.36)], color="#334155", lw=0.9)
     draw_orthogonal(ax, [(3.40, 0.51), (3.80, 0.51)], color="#334155", lw=0.9)
-    
+
     # Seasonal Base -> Coherent Reconciler
     draw_orthogonal(ax, [(4.575, 1.85), (4.575, 1.72)], color="#334155", lw=0.9)
-    
+
     # Column 3 -> Column 4 (Pure horizontal & orthogonal)
     draw_orthogonal(ax, [(5.35, 1.36), (5.65, 1.36)], color="#334155", lw=0.9)
     draw_orthogonal(ax, [(5.35, 0.51), (5.50, 0.51), (5.50, 0.85), (5.65, 0.85)], color="#334155", lw=0.9)
@@ -321,7 +321,7 @@ def generate_fig02_srac_system_architecture() -> None:
 
     # Feedback wiring: Fabric -> Telemetry
     draw_orthogonal(ax, [(6.575, 1.15), (6.575, 0.70)], color="#64748b", lw=0.9, dashed=True)
-    
+
     # Telemetry -> Forecaster & Quota Controller
     draw_orthogonal(ax, [(0.90, 0.70), (0.90, 1.15)], color="#64748b", lw=0.9, dashed=True)
     draw_orthogonal(ax, [(2.725, 0.70), (2.725, 1.15)], color="#64748b", lw=0.9, dashed=True)
@@ -397,7 +397,7 @@ def generate_fig03_srac_rl_agent_architecture() -> None:
     # Inference Connections
     # State -> Encoder
     draw_orthogonal(ax, [(1.30, 2.22), (1.55, 2.22)], color="#334155", lw=0.9)
-    
+
     # Encoder -> GRU
     draw_orthogonal(ax, [(2.50, 2.22), (2.75, 2.22)], color="#334155", lw=0.9)
     ax.text(2.625, 2.34, r"$e_t$", fontsize=6.8, ha="center", va="center", color="#334155")
@@ -497,7 +497,7 @@ def generate_fig04_forecast_benchmark_efficiency() -> None:
         ("PatchTST", 1179.0, 163.593, 94724, 204661000, COLORS['green']),
         ("SRLinear", 60.8, 154.964, 2052, 10372, COLORS['primary']),
     ]
-    
+
     err_data = {
         "OrgLinear": (0, 20.229),
         "NLinear": (0, 2.509),
@@ -612,11 +612,11 @@ def generate_fig04_forecast_benchmark_efficiency() -> None:
     horizons = ["1 Hour", "2 Hours", "3 Hours", "4 Hours"]
     h_mae = [163.377, 148.335, 156.686, 151.457]
     h_rmse = [204.582, 193.712, 202.240, 193.630]
-    
+
     x_d = np.arange(len(horizons))
     ax_d.plot(x_d, h_mae, marker='o', markersize=6, color=COLORS['primary'], lw=2.0, label='SRLinear MAE')
     ax_d.plot(x_d, h_rmse, marker='s', markersize=6, color=COLORS['purple'], lw=2.0, linestyle='--', label='SRLinear RMSE')
-    
+
     for i in range(len(horizons)):
         ax_d.text(x_d[i], h_mae[i] - 7, f"{h_mae[i]:.1f}", ha='center', va='top', fontsize=8.5, color=COLORS['primary'])
         ax_d.text(x_d[i], h_rmse[i] + 5, f"{h_rmse[i]:.1f}", ha='center', va='bottom', fontsize=8.5, color=COLORS['purple'])
