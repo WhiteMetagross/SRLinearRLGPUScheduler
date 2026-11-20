@@ -1,0 +1,34 @@
+schema_version: "1.0"
+plan_id: "paper_non_rl_reproduction_v1"
+suite: "non_rl_suite.yaml"
+claim_scope: "Natural A100 validation scheduling under the common event simulator."
+deterministic_protocol:
+  repetitions_per_split: 1
+  seed_source: "randomness.master_seed"
+  independent_workers: 2
+  threads_per_worker: 4
+  progress_every_steps: 64
+validation:
+  split: "val"
+  baselines:
+    - "gfs_ref"
+    - "static_residual"
+    - "hour_of_day"
+    - "expanding_quantile"
+    - "robust_current_free"
+    - "contextual_linear"
+    - "gfs_srlinear"
+    - "srgfs_contextual_mix"
+    - "gfs_cq_q"
+    - "gfs_cq_qa"
+    - "gfs_cq"
+    - "gfs_cq_no_aging"
+    - "gfs_cq_orglinear"
+final_test:
+  status: "locked"
+comparison:
+  primary_metric: "useful_spot_gpu_hours_score_raw"
+  service_metric: "hp_gang_violation_rate"
+  service_violation_limit: 0.02
+  stochastic_seed_count: 3
+  deterministic_repetitions: 1

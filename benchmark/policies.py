@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections import deque
 from pathlib import Path
 from typing import Any, Mapping, Protocol
 
@@ -82,6 +83,49 @@ class CurrentFreeHeadroomPolicy:
         return {
             "policy_type": "current_free_headroom",
             "margin_fraction": self.margin_fraction,
+            "minimum_residual": self.minimum_residual,
+            "maximum_residual": self.maximum_residual,
+            "priority_weights": list(self.priority_weights),
+        }
+
+
+class HourOfDayResidualPolicy:
+    """Select one train fitted quota residual for each hour of day."""
+
+    def __init__(
+        self,
+        *,
+        residual_by_hour: tuple[float, ...],
+        minimum_residual: float,
+        maximum_residual: float,
+        priority_weights: tuple[float, ...],
+    ) -> None:
+        if len(residual_by_hour) != 24:
+            raise ValueError("Hour policy requires exactly 24 residuals.")
+        values = np.asarray(residual_by_hour, dtype=np.float64)
+        if not np.all(np.isfinite(values)):
+            raise ValueError("Hour policy residuals must be finite.")
+        self.residual_by_hour = tuple(float(value) for value in values)
+        self.minimum_residual = float(minimum_residual)
+        self.maximum_residual = float(maximum_residual)
+        self.priority_weights = tuple(float(value) for value in priority_weights)
+        _validate_action(np.asarray((0.0, *self.priority_weights), dtype=np.float32))
+
+    def action(self, context: Any) -> np.ndarray:
+        hour = (int(context.time) // 3600) % 24
+        residual = float(np.clip(
+            self.residual_by_hour[hour],
+            self.minimum_residual,
+            self.maximum_residual,
+        ))
+        return _validate_action(np.asarray(
+            (residual, *self.priority_weights), dtype=np.float32
+        ))
+
+    def manifest(self) -> dict[str, Any]:
+        return {
+            "policy_type": "hour_of_day_residual",
+            "residual_by_hour": list(self.residual_by_hour),
             "minimum_residual": self.minimum_residual,
             "maximum_residual": self.maximum_residual,
             "priority_weights": list(self.priority_weights),
@@ -202,6 +246,123 @@ class LinearResidualPolicy:
             "feature_mean": list(self.feature_mean),
             "feature_scale": list(self.feature_scale),
             "safety_offset": self.safety_offset,
+            "minimum_residual": self.minimum_residual,
+            "maximum_residual": self.maximum_residual,
+            "priority_weights": list(self.priority_weights),
+        }
+
+
+class ExpandingQuantileResidualPolicy:
+    """Update a delayed causal residual quantile during evaluation."""
+
+    def __init__(
+        self,
+        *,
+        initial_residuals: tuple[float, ...],
+        risk_limit: float,
+        horizon_seconds: int,
+        minimum_residual: float,
+        maximum_residual: float,
+        priority_weights: tuple[float, ...],
+    ) -> None:
+        if not initial_residuals or not 0.0 < risk_limit < 1.0:
+            raise ValueError("Expanding quantile policy requires causal history and a valid risk limit.")
+        self.initial_residuals = tuple(float(value) for value in initial_residuals)
+        self.risk_limit = float(risk_limit)
+        self.horizon_seconds = int(horizon_seconds)
+        self.minimum_residual = float(minimum_residual)
+        self.maximum_residual = float(maximum_residual)
+        self.priority_weights = tuple(float(value) for value in priority_weights)
+        self._residuals = list(self.initial_residuals)
+        self._pending: deque[dict[str, float]] = deque()
+        self._hp_history: deque[tuple[int, float]] = deque()
+        _validate_action(np.asarray((0.0, *self.priority_weights), dtype=np.float32))
+
+    def action(self, context: Any) -> np.ndarray:
+        _, capacity, hp_used, _, base = _single_pool_values(context)
+        now = int(context.time)
+        self._hp_history.append((now, hp_used))
+        while self._pending and self._pending[0]["time"] + self.horizon_seconds <= now:
+            row = self._pending.popleft()
+            peak = max(
+                value
+                for time_value, value in self._hp_history
+                if row["time"] <= time_value <= row["time"] + self.horizon_seconds
+            )
+            self._residuals.append(
+                (row["capacity"] - peak - row["base"]) / row["capacity"]
+            )
+        cutoff = now - self.horizon_seconds
+        while self._hp_history and self._hp_history[0][0] < cutoff:
+            self._hp_history.popleft()
+        self._pending.append({"time": now, "capacity": capacity, "base": base})
+        residual = float(np.quantile(
+            np.asarray(self._residuals), self.risk_limit, method="lower"
+        ))
+        residual = float(np.clip(
+            residual, self.minimum_residual, self.maximum_residual
+        ))
+        return _validate_action(np.asarray(
+            (residual, *self.priority_weights), dtype=np.float32
+        ))
+
+    def manifest(self) -> dict[str, Any]:
+        return {
+            "policy_type": "expanding_quantile_residual",
+            "initial_residual_count": len(self.initial_residuals),
+            "risk_limit": self.risk_limit,
+            "horizon_seconds": self.horizon_seconds,
+            "minimum_residual": self.minimum_residual,
+            "maximum_residual": self.maximum_residual,
+            "priority_weights": list(self.priority_weights),
+        }
+
+
+class GuardedBaseQuotaPolicy:
+    """Apply train fitted backlog and HP pressure guards to the active quota base."""
+
+    def __init__(
+        self,
+        *,
+        hp_rise_margin_fraction: float,
+        backlog_bonus_fraction: float,
+        emergency_hp_queue_fraction: float,
+        minimum_residual: float,
+        maximum_residual: float,
+        priority_weights: tuple[float, ...],
+    ) -> None:
+        self.hp_rise_margin_fraction = float(hp_rise_margin_fraction)
+        self.backlog_bonus_fraction = float(backlog_bonus_fraction)
+        self.emergency_hp_queue_fraction = float(emergency_hp_queue_fraction)
+        self.minimum_residual = float(minimum_residual)
+        self.maximum_residual = float(maximum_residual)
+        self.priority_weights = tuple(float(value) for value in priority_weights)
+
+    def action(self, context: Any) -> np.ndarray:
+        _, capacity, hp_used, _, base = _single_pool_values(context)
+        target = base
+        if context.admission_jobs and context.hp_queue_gpu_demand <= 0.0:
+            target += self.backlog_bonus_fraction * capacity
+        if context.hp_queue_gpu_demand / capacity >= self.emergency_hp_queue_fraction:
+            target = min(
+                target,
+                capacity - hp_used - self.hp_rise_margin_fraction * capacity,
+            )
+        residual = float(np.clip(
+            (np.clip(target, 0.0, capacity) - base) / capacity,
+            self.minimum_residual,
+            self.maximum_residual,
+        ))
+        return _validate_action(np.asarray(
+            (residual, *self.priority_weights), dtype=np.float32
+        ))
+
+    def manifest(self) -> dict[str, Any]:
+        return {
+            "policy_type": "guarded_base_quota",
+            "hp_rise_margin_fraction": self.hp_rise_margin_fraction,
+            "backlog_bonus_fraction": self.backlog_bonus_fraction,
+            "emergency_hp_queue_fraction": self.emergency_hp_queue_fraction,
             "minimum_residual": self.minimum_residual,
             "maximum_residual": self.maximum_residual,
             "priority_weights": list(self.priority_weights),
@@ -395,15 +556,44 @@ def build_policy(
     if artifact.get("policy_type") != policy_type:
         raise ValueError("Declared policy type does not match its fitted artifact.")
     priority = tuple(float(value) for value in baseline.get("priority_weights", [0.0] * 6))
-    if policy_type == "current_free_headroom":
+    if policy_type == "fixed_residual":
+        policy: BaselinePolicy = FixedActionPolicy(np.asarray(
+            (float(artifact["residual_fraction"]), *priority), dtype=np.float32
+        ))
+    elif policy_type == "current_free_headroom":
         policy: BaselinePolicy = CurrentFreeHeadroomPolicy(
             margin_fraction=float(artifact["margin_fraction"]),
             minimum_residual=float(artifact["minimum_residual"]),
             maximum_residual=float(artifact["maximum_residual"]),
             priority_weights=priority,
         )
+    elif policy_type == "hour_of_day_residual":
+        policy = HourOfDayResidualPolicy(
+            residual_by_hour=tuple(float(value) for value in artifact["residual_by_hour"]),
+            minimum_residual=float(artifact["minimum_residual"]),
+            maximum_residual=float(artifact["maximum_residual"]),
+            priority_weights=priority,
+        )
+    elif policy_type == "expanding_quantile_residual":
+        policy = ExpandingQuantileResidualPolicy(
+            initial_residuals=tuple(float(value) for value in artifact["initial_residuals"]),
+            risk_limit=float(artifact["risk_limit"]),
+            horizon_seconds=int(artifact["horizon_seconds"]),
+            minimum_residual=float(artifact["minimum_residual"]),
+            maximum_residual=float(artifact["maximum_residual"]),
+            priority_weights=priority,
+        )
     elif policy_type == "contextual_linear_residual":
         policy = _linear_from_artifact(artifact, priority)
+    elif policy_type == "guarded_base_quota":
+        policy = GuardedBaseQuotaPolicy(
+            hp_rise_margin_fraction=float(artifact["hp_rise_margin_fraction"]),
+            backlog_bonus_fraction=float(artifact["backlog_bonus_fraction"]),
+            emergency_hp_queue_fraction=float(artifact["emergency_hp_queue_fraction"]),
+            minimum_residual=float(artifact["minimum_residual"]),
+            maximum_residual=float(artifact["maximum_residual"]),
+            priority_weights=priority,
+        )
     elif policy_type == "srgfs_contextual_mix":
         linear_payload = artifact.get("linear")
         if not isinstance(linear_payload, Mapping):

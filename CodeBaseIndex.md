@@ -10,6 +10,7 @@
 | `benchmark/rl_run.py` | Trains or evaluates one quota RL method. |
 | `benchmark/rl_experiments.py` | Launches and monitors multi seed RL batches. |
 | `benchmark/measure_forecast_efficiency.py` | Measures parameter count, operations, and inference cost. |
+| `benchmark/aggregate_paper_results.py` | Aggregates complete validation outputs into paper table statistics. |
 
 ## Final configurations:
 
@@ -18,6 +19,8 @@
 | `benchmark/forecast_suite.yaml` | Shared forecasting protocol and model parameters. |
 | `benchmark/suite.yaml` | Scheduler baseline definitions. |
 | `benchmark/paper_scheduler_plan.yaml` | Main deterministic baseline run plan. |
+| `benchmark/paper_non_rl_plan.yaml` | Reported quota controls and SRQGuard ablation run plan. |
+| `benchmark/paper_results_manifest.yaml` | Maps every paper row to its suite and method identifier. |
 | `benchmark/non_rl_suite.yaml` | Native GFS, Contextual Linear Quota, SRGFS, and deterministic SRLinear controls. |
 | `benchmark/method_plan.yaml` | Final deterministic method comparison. |
 | `benchmark/rl_suite.yaml` | CLQ PPO and SRLinear quota PPO controls. |
@@ -58,6 +61,7 @@
 | `benchmark/fit_srlinear_quota_calibration.py` | Fits SRLinear quota uncertainty from training forecasts. |
 | `benchmark/fit_contextual_control.py` | Fits Contextual Linear Quota from a training replay. |
 | `benchmark/fit_srgfs.py` | Builds deterministic SRGFS controller settings. |
+| `benchmark/fit_paper_controls.py` | Fits every reported deterministic quota and SRQGuard artifact from training data. |
 | `benchmark/protocol_helpers.py` | Applies split locks and causal duration fitting. |
 
 ## Paper and documentation:
@@ -67,6 +71,8 @@
 | `paper/main.tex` | IEEE paper source. |
 | `paper/main.pdf` | Built paper. |
 | `paper/figures/` | Figures required by the LaTeX source and README. |
+| `paper/scripts/` | Deterministic generation code for all eight paper figures. |
+| `paper/figure_sources/` | Retained visual sources for the three architecture figures. |
 | `docs/DatasetAndSplits.md` | Data provenance, chronology, and leakage controls. |
 | `docs/ForecastingMethods.md` | Forecast model definitions. |
 | `docs/SchedulingMethods.md` | Scheduler and quota method definitions. |

@@ -1,0 +1,53 @@
+schema_version: "1.0"
+paper_title: "Forecast Guided Reinforcement Learning for Reliable and Risk Aware Quota Control in Preemptible GPU Scheduling"
+evaluation_split: "validation"
+tables:
+  forecasting:
+    suite: "forecast_suite.yaml"
+    methods:
+      Seasonal Naive: "seasonal_naive"
+      OrgLinear: "orglinear_released"
+      NLinear: "nlinear"
+      DLinear: "dlinear"
+      Temporal Mamba: "temporal_mamba"
+      PatchTST: "patchtst"
+      SRLinear: "srlinear"
+  scheduling:
+    suites:
+      suite.yaml:
+        Native GFS: "gfs_ref"
+        FCFS Admission: "fifo_admission"
+        GFS Causal SEPT: "shortest_causal_estimate_first"
+        Headroom Reserve Control: "fixed_headroom_quota"
+        YARN CS: "yarn_cs_source_compatible"
+        Chronus: "chronus_source_compatible"
+        Lyra: "lyra_source_compatible"
+        FGD: "fgd_source_compatible"
+      non_rl_suite.yaml:
+        Fixed Residual Quota: "static_residual"
+        Diurnal Quota Control: "hour_of_day"
+        Online Quantile Control: "expanding_quantile"
+        CLQ: "contextual_linear"
+        SRGFS: "gfs_srlinear"
+        SRMix: "srgfs_contextual_mix"
+  reinforcement_learning:
+    suites:
+      non_rl_suite.yaml:
+        CLQ: "contextual_linear"
+        SRGFS: "gfs_srlinear"
+      rl_suite.yaml:
+        CLQ PPO: "cqrl"
+        SRQ PPO: "srqrl"
+      srlinear_rl_suite.yaml:
+        SRU PPO: "sr_utility_ppo"
+      srac_rl_suite.yaml:
+        SRAC: "srac"
+  srqguard_ablation:
+    suite: "non_rl_suite.yaml"
+    methods:
+      Native GFS: "gfs_ref"
+      SRQGuard Quota: "gfs_cq_q"
+      SRQGuard Priority: "gfs_cq_qa"
+      SRQGuard Full: "gfs_cq"
+      SRQGuard No Aging: "gfs_cq_no_aging"
+      OrgQGuard: "gfs_cq_orglinear"

@@ -34,6 +34,30 @@ baselines:
     status: "ready"
     family: "reference"
     action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  static_residual:
+    status: "requires_train_fit"
+    family: "paper_quota_control"
+    policy_type: "fixed_residual"
+    action_artifact: "fitted/non_rl_static_residual.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  hour_of_day:
+    status: "requires_train_fit"
+    family: "paper_quota_control"
+    policy_type: "hour_of_day_residual"
+    action_artifact: "fitted/non_rl_hour_of_day.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  expanding_quantile:
+    status: "requires_train_fit"
+    family: "paper_quota_control"
+    policy_type: "expanding_quantile_residual"
+    action_artifact: "fitted/non_rl_expanding_quantile.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  robust_current_free:
+    status: "requires_train_fit"
+    family: "paper_quota_control"
+    policy_type: "current_free_headroom"
+    action_artifact: "fitted/fixed_headroom_quota.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
   contextual_linear:
     status: "ready"
     family: "quota_control"
@@ -51,6 +75,46 @@ baselines:
       calibration_artifact: "fitted/srlinear_quota_calibration.json"
       device: "auto"
     action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  gfs_cq_q:
+    status: "ready"
+    family: "srqguard_ablation"
+    stochastic: true
+    forecast_intervention: &srlinear_conformal
+      type: "srlinear_online"
+      mode: "conformal"
+      forecast_suite: "forecast_suite.yaml"
+      calibration_artifact: "fitted/srlinear_quota_calibration.json"
+      device: "auto"
+      quota_quantile: 0.90
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  gfs_cq_qa:
+    status: "ready"
+    family: "srqguard_ablation"
+    stochastic: true
+    forecast_intervention: *srlinear_conformal
+    action: [0.0, 0.25, 0.0, 0.0, 0.0, 0.0, -1.0]
+  gfs_cq:
+    status: "requires_train_fit"
+    family: "srqguard_ablation"
+    stochastic: true
+    forecast_intervention: *srlinear_conformal
+    policy_type: "guarded_base_quota"
+    action_artifact: "fitted/non_rl_guarded_base.json"
+    priority_weights: [0.25, 0.0, 0.0, 0.0, 0.0, -1.0]
+  gfs_cq_orglinear:
+    status: "requires_train_fit"
+    family: "srqguard_ablation"
+    policy_type: "guarded_base_quota"
+    action_artifact: "fitted/non_rl_guarded_base.json"
+    priority_weights: [0.25, 0.0, 0.0, 0.0, 0.0, -1.0]
+  gfs_cq_no_aging:
+    status: "requires_train_fit"
+    family: "srqguard_ablation"
+    stochastic: true
+    forecast_intervention: *srlinear_conformal
+    policy_type: "guarded_base_quota"
+    action_artifact: "fitted/non_rl_guarded_base.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, -1.0]
   gfs_srlinear_contextual:
     status: "ready"
     family: "forecast_and_quota_control"

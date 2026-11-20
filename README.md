@@ -148,6 +148,26 @@ python benchmark/fit_contextual_control.py --train-report <train replay report> 
 python benchmark/fit_srgfs.py --contextual benchmark/fitted/non_rl_contextual_linear.json --output-dir benchmark/fitted
 ```
 
+Fit every deterministic quota control reported in the paper from the same training replay:
+
+```bash
+conda run --no-capture-output -n iml-research-rmproject python benchmark/fit_paper_controls.py \
+  --train-report <complete train quota report> \
+  --output-dir benchmark/fitted \
+  --qualification publication
+```
+
+This command produces the Fixed Residual Quota, Diurnal Quota Control, Online Quantile Control, Headroom Reserve Control, Contextual Linear Quota, and SRQGuard control artifacts. Validation and test outcomes are rejected as fit inputs.
+
+Prepare and launch the complete non RL comparison and SRQGuard ablation plan:
+
+```bash
+conda run --no-capture-output -n iml-research-rmproject python benchmark/experiments.py \
+  --plan benchmark/paper_non_rl_plan.yaml prepare
+conda run --no-capture-output -n iml-research-rmproject python benchmark/experiments.py \
+  --plan benchmark/paper_non_rl_plan.yaml launch --split val
+```
+
 Run those Python commands through `conda run` inside WSL. Fitted JSON files remain local artifacts because they encode outputs of the training stage.
 
 ## SRAC experiments:
@@ -162,6 +182,30 @@ conda run --no-capture-output -n iml-research-rmproject python benchmark/rl_expe
 
 The runner records the code commit, config hashes, trace hashes, split, seed, runtime environment, actions, metrics, and checkpoints for each run.
 
+## Paper result map:
+
+[`benchmark/paper_results_manifest.yaml`](benchmark/paper_results_manifest.yaml) is the source of truth that maps each paper label to its suite and executable method identifier. It covers these result groups:
+
+- Forecasting baselines and SRLinear.
+- Native GFS and scheduler baselines.
+- Deterministic quota controls, SRGFS, and SRMix.
+- CLQ PPO, SRU PPO, SRQ PPO, and SRAC.
+- Every reported SRQGuard ablation.
+
+The literature scheduler controls are declared in `benchmark/suite.yaml`. The quota controls and mechanism ablations are declared in `benchmark/non_rl_suite.yaml`. The RL controls are declared in `benchmark/rl_suite.yaml`, `benchmark/srlinear_rl_suite.yaml`, and `benchmark/srac_rl_suite.yaml`.
+
+Aggregate completed runs without copying large artifacts into Git:
+
+```bash
+conda run --no-capture-output -n iml-research-rmproject python \
+  benchmark/aggregate_paper_results.py \
+  --input CLQ=<path/to/publication_metrics.json> \
+  --input SRAC=<path/to/validation.json> \
+  --output runs/paper_summary.csv
+```
+
+Repeat `--input METHOD=PATH` for every seed. The aggregator rejects incomplete observations and reports the mean and sample standard deviation used by the paper tables.
+
 ## Paper build:
 
 The checked PDF is available at [paper/main.pdf](paper/main.pdf). Rebuild it with:
@@ -171,6 +215,16 @@ cd paper
 bash build.sh
 ```
 
+Regenerate all paper figures after the full result runs complete:
+
+```bash
+SRAC_VALIDATION_JSON=<path/to/completed/validation.json> \
+conda run --no-capture-output -n iml-research-rmproject python \
+  paper/scripts/build_research_figures.py
+```
+
+Figures 1 to 3 are deterministically corrected and packaged from the retained source images under `paper/figure_sources/`. Figures 4 to 7 encode the verified paper table values. Figure 8 reads the complete SRAC action ledger named by `SRAC_VALIDATION_JSON`.
+
 ## Reproducibility boundary:
 
 - Raw trace data is not redistributed.
@@ -178,6 +232,7 @@ bash build.sh
 - All published validation metrics require the official trace and complete replay time.
 - The August final test split remains locked in this release.
 - Local code and output consistency tests are included. Full numerical reproduction still requires rerunning the documented experiments.
+- No reported run artifact is stored in Git. Every reported method definition, fit rule, runner, metric reducer, and paper label mapping is stored in Git.
 
 ## License:
 
