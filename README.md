@@ -62,7 +62,7 @@ These are validation results from the fixed A100 protocol. They are not final te
 
 ## Data protocol:
 
-Download the Alibaba GPU Spot trace described in [data/README.md](data/README.md). Place the two verified files at:
+Download the [Alibaba GPU Spot Trace](https://github.com/alibaba/clusterdata/tree/master/cluster-trace-v2026-spot-gpu) from the official Alibaba Cluster Trace Program repository. Detailed acquisition and hash verification instructions are provided in [data/README.md](data/README.md). Place the two verified files at:
 
 ```text
 data/raw/spot_gpu_v2026/node_info_df.csv
