@@ -1,0 +1,38 @@
+# Python caches.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Conda and local environments.
+.conda/
+.venv/
+venv/
+
+# Raw data and generated experiment state.
+data/raw/
+runs/
+results/
+benchmark/fitted/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.pkl
+
+# Paper build intermediates.
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+
+# Editors and operating systems.
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+

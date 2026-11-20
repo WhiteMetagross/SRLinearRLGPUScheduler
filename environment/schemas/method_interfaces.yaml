@@ -1,0 +1,39 @@
+schema_id: "research_sim_method_interfaces"
+version: "4.0"
+controller:
+  input: "Control observation schema 4.0 after the causal base quota update."
+  output: "One bounded quota residual plus six admission priority weights."
+  cadence_seconds: 300
+  placement: "Native GFS placement remains common in the primary benchmark."
+  mutation_rule: "Method must act only through UnifiedControlEnv.step()."
+  gpu_accounting_mode: "total_demand: worker_num multiplied by gpu_request for running HP and Spot demand."
+  forbidden_inputs:
+    - "future trace rows"
+    - "trace known duration or remaining duration"
+    - "validation or test outcomes during fitting"
+scheduler:
+  role: "Placement compatibility and isolated placement ablations only."
+  input: "Observation schema 3.0 plus action mask."
+  output: "One legal flat action."
+  mutation_rule: "Method must not mutate simulator state or decision context."
+forecaster:
+  interface: "research_sim.forecasts.CausalQuotaProvider"
+  input: "CausalForecastContext with aggregate history ending before the quota decision."
+  output: "Complete pool quota mapping for every guarantee horizon."
+  required_identity:
+    - "provider_id"
+    - "provider_version"
+  forbidden_inputs:
+    - "future trace rows"
+    - "trace known remaining duration"
+    - "test outcomes during model selection"
+joint_ablation:
+  cells:
+    - "GFS-Ref"
+    - "GFS+"
+    - "RL-Quota"
+    - "RL-Priority"
+    - "RL-GFS"
+reference_compatibility:
+  gpu_accounting_mode: "source_per_worker"
+  scope: "Released GFS behavior only. Excluded from the corrected primary benchmark."

@@ -1,0 +1,148 @@
+protocol_id: "gfs_unified_control_env_v5"
+status: "FROZEN"
+protocol_version: "5.0.1"
+freeze_scope: "environment_contract_only"
+benchmark_validation_status: "PROTOCOL5_TWELVE_BASELINE_SMOKE_PASSED"
+frozen_at: "2026-10-06"
+calendar_anchor: "2024-03-01 00:00:00"
+followup_seconds: 3600
+
+train_execution:
+  mode: "continuous"
+  rollout_decisions: 256
+  reset_rule: "Restore once at the train split start. Never reset at rollout boundaries."
+  service_cost_normalization: "Each violation contributes 1 / full split eligible HP gang cohort size."
+  decision_cadence_seconds: 300
+  dual_update_weighting: "Weight each rollout residual by newly resolved cohort members and newly intersected control windows."
+
+split_bounds:
+  train:
+    score_start: 5270400
+    score_end: 10540800
+  val:
+    score_start: 10627200
+    score_end: 13219200
+  test:
+    score_start: 13305600
+    score_end: 15897600
+
+calendar_dates:
+  warmup: "[2024-03-01 00:00, 2024-05-01 00:00), 61 complete days"
+  train: "[2024-05-01 00:00, 2024-07-01 00:00), 61 complete days"
+  val: "[2024-07-02 00:00, 2024-08-01 00:00), 30 complete days"
+  test: "[2024-08-02 00:00, 2024-09-01 00:00), 30 complete days"
+
+embargoes:
+  - start: 10540800
+    end: 10627200
+  - start: 13219200
+    end: 13305600
+
+shared_protocol:
+  node_filter: "A100-SXM4-80GB"
+  trace_mode: "research_full_history"
+  rule_version: "3.1"
+  gpu_accounting_mode: "total_demand"
+  retry_mode: "next_event"
+  L_H: 3600
+  M: 8
+  candidate_geometry_version: "publication_v1"
+  environment_seed: 20261002
+  primary_observation_schema_version: "4.0"
+  primary_action_schema_version: "4.0"
+  placement_compatibility_schema_version: "3.0"
+  event_schema_version: "2.0"
+  reward_accounting_version: "completion_credit_cap_v2"
+  resource_accounting_version: "declared_gpu_units_v1"
+  control_interval_seconds: 300
+  control_queue_size: 64
+  max_quota_delta_fraction: 1.0
+  allowed_forecast_modes:
+    - "native_online"
+    - "external_causal"
+  native_forecast:
+    provider_id: "native_gfs"
+    provider_version: "released_v1"
+
+verification:
+  enabled: false
+  B_call: 0
+  K: 0
+  note: "Future scenario checks are excluded from the primary unified control benchmark."
+
+execution_contract:
+  snapshot_missing_mode: "raise"
+  independent_task_backend: "process"
+  process_start_method: "spawn"
+  threads_per_worker: 1
+  deterministic_result_order: true
+  worker_count_semantics: "Resource setting only. It must not change task order, seeds, actions, or metrics."
+  gpu_scope: "Batched policy and forecaster tensor work only. Simulator event transitions remain on CPU."
+  vector_rollout_backend: "gymnasium_async_vector_env"
+  vector_worker_semantics: "One ordered CPU simulator per process. Central batched policy inference only."
+  vector_worker_count_scope: "Method level resource setting declared before comparison."
+  forecast_history_materialization: "Incremental wide-table cache with full-history semantic equivalence."
+  forecast_schema_refresh: "Retrain causally when the observed organization column set changes between daily fits."
+  scheduler_profiles:
+    native_gfs: "Released GFS forecast, quota, admission, placement, and preemption path."
+    yarn_cs_source_compatible: "Released GFS quota, FCFS queues, best-fit placement, and direct source-style HP preemption."
+    chronus_source_compatible: "Five-minute batch scheduling, global 20-minute lease flush, best-fit placement, no live preemption, one-hour application checkpoints, and 120-second turnover overhead."
+    lyra_source_compatible: "Released queue order and GFS quota with Lyra preemption-cost placement."
+    fgd_source_compatible: "Released GFS quota and FGD whole-card plus fractional placement and preemption paths."
+    capacity_open_fcfs_best_fit_probe: "Diagnostic full-capacity quota, FCFS queues, best-fit placement, and preemption mechanism. Not a YARN-CS reproduction."
+    staggered_lease_best_fit_probe: "Diagnostic per-job 20-minute HP and 5-minute Spot leases, best-fit placement, no live preemption, and 120-second turnover overhead. Not a Chronus reproduction."
+    whole_card_cost_best_fit_probe: "Diagnostic native-quota whole-card cost-aware preemption with best-fit placement. Not a Lyra reproduction."
+    whole_card_fgd_probe: "Diagnostic native-quota whole-card FGD scoring with native fractional fallback. Not an FGD reproduction."
+  scheduler_profile_scope: "Literature baselines only. Unified RL methods retain native_gfs unless explicitly declared."
+  duration_ranker_fit: "Fit once at each split score boundary using only executed completions and right-censored service from the audited native prefix."
+
+workload_contract:
+  primary: "natural"
+  allowed_spot_arrival_multipliers: [1]
+  natural_headline_required: true
+
+trace_hashes:
+  node_sha256: "1aba161961a5a4a1a61aa581383c5e5abe3400b59f8597ba8c4eef7597bc9d18"
+  job_sha256: "113ccee4c28f5c3bbaaca974cd164b9280b7d4c39e53b745443b28eea05e03dd"
+trace_source:
+  repository: "https://github.com/alibaba/clusterdata"
+  dataset_directory: "cluster-trace-v2026-spot-gpu"
+  source_commit: "7e77a86ac139298e8f19da2be84f07bd6d23f477"
+
+study:
+  claim: "Coherent SRLinear forecasting improves the GFS operating point, while constrained recurrent quota control reduces rollback loss and evictions with near-ceiling useful Spot work under the declared high priority service limit."
+  primary_metric: "useful_spot_gpu_hours_score_raw"
+  service_metric: "hp_gang_violation_count / eligible_hp_gang_arrival_count"
+  service_violation_limit: 0.02
+  service_cohort: "Eligible integer GPU HP gangs submitted in the score interval with their full L_H deadline observed in follow up."
+  score_interval_convention: "Half open interval [score_start, score_end)."
+  actor_seeds: [42, 123, 456]
+  comparison_design:
+    - "Native GFS: OrgLinear forecast with native quota and scheduling"
+    - "SRGFS: SRLinear forecast with native quota and scheduling"
+    - "Contextual Linear Quota: fitted deterministic quota residual"
+    - "SRAC: constrained recurrent mixture of contextual and SRLinear endpoints"
+  required_controls:
+    - "gfs_ref"
+    - "fixed_headroom_quota"
+    - "fifo_admission"
+    - "shortest_causal_estimate_first"
+    - "contextual_linear"
+  final_test:
+    opened: false
+    access_grant: "test_access_grant.json"
+    rule: "Unlock once after method, hyperparameters, seeds, and evaluation commands are hashed."
+
+support_gates:
+  min_train_whole_card_spot_arrivals: 3000
+  min_val_whole_card_spot_arrivals: 1000
+  min_test_whole_card_spot_arrivals: 1000
+  min_val_multi_node_whole_card_spot_arrivals: 30
+  min_test_multi_node_whole_card_spot_arrivals: 30
+  max_single_day_share: 0.25
+
+release_checks:
+  - "Fresh snapshot parity for train and validation."
+  - "Zero-action parity for every learned controller."
+  - "Zero invalid control actions in every reported run."
+  - "Final test remains locked until method selection is complete."

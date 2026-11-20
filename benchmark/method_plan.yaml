@@ -1,0 +1,23 @@
+schema_version: "1.0"
+plan_id: "a100_non_rl_methods_validation_v1"
+suite: "non_rl_suite.yaml"
+deterministic_protocol:
+  repetitions_per_split: 1
+  seed_source: "randomness.master_seed"
+  independent_workers: 2
+  threads_per_worker: 4
+  progress_every_steps: 12
+validation:
+  split: "val"
+  baselines:
+    - "gfs_ref"
+    - "contextual_linear"
+    - "gfs_srlinear"
+    - "gfs_srlinear_contextual"
+    - "srgfs_contextual_mix"
+final_test:
+  status: "locked"
+comparison:
+  primary_metric: "useful_spot_gpu_hours_score_raw"
+  constraint_metric: "hp_gang_violation_rate"
+  constraint_limit: 0.02

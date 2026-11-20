@@ -1,0 +1,21 @@
+schema_id: "research_sim_action"
+version: "3.0"
+role: "Placement compatibility and isolated placement ablations. Not the v4 primary control action."
+space: "Discrete(2*(M+1))"
+encoding: "flat_action = 2 * candidate_slot + verify_bit"
+candidate_slot_zero: "deferral"
+verification_enabled: false
+legal_primary_actions: "Even actions whose candidate slots are present in the action mask."
+candidate_geometry_version: "publication_v1"
+candidate_order:
+  - "deferral"
+  - "fallback"
+  - "native GFS when distinct"
+  - "minimum node placement when distinct"
+  - "preserve full nodes when distinct"
+  - "consume full nodes when distinct"
+  - "tight pack when distinct"
+  - "spread when distinct"
+  - "bounded local moves until M"
+invalid_action_policy: "raise"
+required_reported_run_coercions: 0

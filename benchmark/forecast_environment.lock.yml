@@ -1,0 +1,25 @@
+name: rmproject-forecast
+channels:
+  - conda-forge
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.11.15
+  - pip=26.1.2
+  - cuda-version=13.2
+  - cuda-nvcc=13.2.78
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu130
+      - torch==2.9.1+cu130
+      - numpy==2.4.4
+      - pandas==2.3.3
+      - scipy==1.17.1
+      - scikit-learn==1.8.0
+      - joblib==1.5.3
+      - threadpoolctl==3.6.0
+      - mamba-ssm==2.3.2.post1
+      - causal-conv1d==1.6.2.post1
+      - triton==3.5.1
+      - chinese-calendar==1.11.0
+      - pyyaml==6.0.3
+      - pytest==9.0.3

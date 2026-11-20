@@ -1,0 +1,148 @@
+schema_version: "1.0"
+benchmark_id: "a100_forecasting_development_v1"
+environment_protocol: "../environment/protocol.yaml"
+source_snapshot: "../runs/warmup_snapshots_v5/warmup_A100_SXM4_80GB_research_full_history_s10627200_e13219200_f13222800_splitval_envseed20261002_forecastnative_gfs_released_v1_candpublication_v1_acctcompletion_credit_cap_v2_resourcedeclared_gpu_units_v1_gputotal_demand_v3.1.pkl"
+output_root: "../runs/forecast_benchmark"
+development_split: "train"
+test_policy: "locked"
+target: "sum_of_per_organization_hourly_maxima"
+secondary_target: "simultaneous_pool_hourly_maximum"
+timestamp_contract: "Use recorder time for row slicing and simulator calendar time for model covariates."
+rolling:
+  lookback_hours: 672
+  horizon_hours: 4
+  origin_cadence_hours: 24
+  calibration_origins: 14
+  quantiles: [0.90, 0.95, 0.99]
+randomness:
+  master_seed: 17
+  stochastic_seed_count: 3
+  stochastic_seed_derivation: "numpy_seedsequence_spawn_uint32_v1"
+resources:
+  device: "auto"
+  gpu_index: 0
+  data_loader_workers: 4
+  torch_threads: 4
+  minimum_output_free_gib: 5
+  minimum_gpu_free_gib: 2
+models:
+  seasonal_naive:
+    enabled: true
+    stochastic: false
+    device: "cpu"
+    seasonal_lag_hours: 168
+  dlinear:
+    enabled: true
+    device: "auto"
+    moving_average: 25
+    epochs: 20
+    batch_size: 512
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    validation_hours: 168
+    sample_stride_hours: 1
+    patience: 3
+  nlinear:
+    enabled: true
+    device: "cpu"
+    epochs: 20
+    batch_size: 512
+    learning_rate: 0.001
+    weight_decay: 0.0001
+    validation_hours: 168
+    sample_stride_hours: 1
+    patience: 3
+  srlinear:
+    enabled: true
+    stochastic: true
+    device: "auto"
+    periods: [24, 48, 168, 336, 672]
+    base_period: 168
+    recent_windows: [4, 12, 24, 72, 168]
+    residual_lookback: 48
+    validation_hours: 168
+    validation_cadence_hours: 24
+    tuning_validation_cadence_hours: 24
+    sample_stride_hours: 1
+    ridge_alphas: [0.0001, 0.001, 0.01, 0.1, 1.0]
+    reconciliation_grid: [0.0, 0.25, 0.5, 0.75, 1.0]
+    epochs: 80
+    learning_rate: 0.003
+    weight_decay: 0.0001
+    patience: 10
+    organization_loss_weight: 0.15
+    gate_stability_weight: 0.0001
+    loss_rmse_weight: 0.75
+    loss_tail_weight: 0.25
+    loss_tail_fraction: 0.10
+    loss_peak_weight: 0.20
+    loss_underprediction_weight: 0.25
+    loss_peak_quantile: 0.90
+    validation_rmse_weight: 0.80
+    base_gate_logit: 8.0
+    gradient_clip: 1.0
+  patchtst:
+    enabled: true
+    device: "auto"
+    patch_length: 16
+    patch_stride: 8
+    model_width: 64
+    heads: 4
+    layers: 2
+    feedforward_width: 128
+    dropout: 0.1
+    epochs: 15
+    batch_size: 256
+    learning_rate: 0.0001
+    weight_decay: 0.0001
+    validation_hours: 168
+    sample_stride_hours: 2
+    patience: 3
+  temporal_mamba:
+    enabled: true
+    device: "auto"
+    patch_length: 24
+    patch_stride: 24
+    model_width: 32
+    state_width: 8
+    convolution_width: 4
+    expansion: 2
+    layers: 1
+    dropout: 0.1
+    epochs: 15
+    batch_size: 256
+    learning_rate: 0.0003
+    weight_decay: 0.0001
+    validation_hours: 168
+    sample_stride_hours: 2
+    patience: 5
+    precision: "fp16"
+    fused_optimizer: true
+    gpu_resident: true
+    validation_batch_size: 4096
+    data_loader_workers: 0
+  orglinear_released:
+    enabled: true
+    device: "cpu"
+    epochs: 10
+    batch_size: 32
+    learning_rate: 0.00004
+  orglinear_r:
+    enabled: true
+    device: "auto"
+    epochs: 10
+    batch_size: 32
+    learning_rate: 0.00004
+smoke:
+  max_origins: 1
+  stochastic_seed_count: 1
+  epochs: 1
+  batch_size: 256
+preflight:
+  origin_selection: "first_and_last"
+  stochastic_seed_count: 1
+  epochs: 1
+  batch_size: 256
+pilot:
+  max_origins: 8
+  stochastic_seed_count: 1

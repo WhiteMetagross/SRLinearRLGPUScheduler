@@ -1,0 +1,54 @@
+schema_id: "research_sim_observation"
+version: "3.0"
+role: "Placement compatibility and isolated placement ablations. Not the v4 primary control observation."
+dtype: "float32_except_action_mask"
+bounds: "All semantic features are finite and within [0, 1]."
+fields:
+  node_features:
+    shape: ["N", 7]
+    names:
+      - "capacity_fraction"
+      - "free_card_fraction"
+      - "hp_occupied_fraction"
+      - "spot_occupied_fraction"
+      - "eviction_score_fraction"
+      - "rollback_exposure_fraction"
+      - "running_spot_job_density"
+  candidate_node_counts:
+    shape: ["M+1", "N"]
+    bounds: "[0, node capacity]"
+  candidate_features:
+    shape: ["M+1", 13]
+    names:
+      - "available"
+      - "nodes_used_fraction"
+      - "worker_fraction"
+      - "gpu_per_worker_fraction"
+      - "source_defer"
+      - "source_fallback"
+      - "source_native_gfs"
+      - "source_tight_pack"
+      - "source_spread"
+      - "source_local_move"
+      - "source_failure_domain_min_nodes"
+      - "source_preserve_full_nodes"
+      - "source_consume_full_nodes"
+  job_features:
+    shape: [5]
+    names:
+      - "worker_fraction_of_nodes"
+      - "gpu_per_worker_fraction"
+      - "total_gpu_demand_fraction"
+      - "queue_wait_squashed"
+      - "estimated_duration_squashed"
+  global_features:
+    shape: [13]
+  action_mask:
+    shape: ["2*(M+1)"]
+    dtype: "bool"
+causality:
+  excludes:
+    - "future arrivals"
+    - "trace known completion time"
+    - "trace known remaining duration"
+    - "validation or test outcomes"

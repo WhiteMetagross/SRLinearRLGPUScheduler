@@ -1,0 +1,21 @@
+schema_id: "research_sim_reward"
+version: "completion_credit_cap_v2"
+primary_reward: "Cluster wide useful Spot GPU hours credited between decisions."
+v4_training_reward: "useful_spot_gpu_hours - spot_queue_gpu_hours - lost_gpu_hours"
+v4_training_components:
+  useful_spot_gpu_hours: "Committed checkpoint and capped completion credit in the interval."
+  spot_queue_gpu_hours: "Exact integral of pending Spot GPU demand over scored seconds."
+  lost_gpu_hours: "Executed rollback loss from preemption events in the interval."
+v4_service_handling: "High priority deadline violations are a separate constraint cost, not a reward weight."
+credit_events:
+  - "checkpoint credit for committed service."
+  - "completion remainder capped by service since the last checkpoint."
+diagnostics:
+  - "offered job credited GPU hours."
+  - "other jobs credited GPU hours."
+  - "lost GPU hours from preemption."
+primary_metric: "useful_spot_gpu_hours_score_raw"
+reporting_rule: "Report physical components separately. Never report v4_training_reward as the headline system metric."
+safety_metric: "hp_gang_violation_count / eligible_hp_gang_arrival_count"
+safety_limit: 0.02
+float_reconciliation_tolerance: 1.0e-9

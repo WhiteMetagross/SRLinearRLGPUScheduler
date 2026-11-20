@@ -1,0 +1,30 @@
+schema_version: "1.0"
+plan_id: "a100_scheduling_baselines_validation_v1"
+suite: "suite.yaml"
+deterministic_protocol:
+  repetitions_per_split: 1
+  seed_source: "randomness.master_seed"
+  independent_workers: 2
+  threads_per_worker: 4
+  progress_every_steps: 12
+validation:
+  split: "val"
+  baselines:
+    - "gfs_ref"
+    - "fifo_admission"
+    - "shortest_causal_estimate_first"
+    - "fixed_headroom_quota"
+    - "yarn_cs_source_compatible"
+    - "chronus_source_compatible"
+    - "lyra_source_compatible"
+    - "fgd_source_compatible"
+    - "capacity_open_fcfs_best_fit_probe"
+    - "staggered_lease_best_fit_probe"
+    - "whole_card_cost_best_fit_probe"
+    - "whole_card_fgd_probe"
+final_test:
+  status: "locked"
+comparison:
+  primary_metric: "useful_spot_gpu_hours_score_raw"
+  constraint_metric: "hp_gang_violation_rate"
+  constraint_limit: 0.02

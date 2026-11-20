@@ -1,0 +1,72 @@
+schema_version: "1.0"
+suite_id: "a100_current_non_rl_methods_v1"
+environment:
+  root: "../environment"
+  protocol: "../environment/protocol.yaml"
+  freeze_lock: "../environment/FROZEN_SHA256SUMS"
+  configs:
+    train: "../environment/configs/natural_train.yaml"
+    val: "../environment/configs/natural_val.yaml"
+  output_root: "../runs/non_rl_methods"
+  test_policy: "locked"
+resources:
+  simulator_device: "cpu"
+  policy_device: "auto"
+  independent_workers: 2
+  threads_per_worker: 4
+randomness:
+  master_seed: 17
+  deterministic_seed_derivation: "master_seed_identity_v1"
+  stochastic_seed_count: 3
+  stochastic_seed_derivation: "numpy_seedsequence_spawn_uint32_v1"
+deterministic_execution:
+  epochs: 0
+  iterations: 0
+  complete_replays_per_split: 1
+  full_seed_repetitions: 1
+  expected_seed_variance: 0
+comparison:
+  primary_metric: "useful_spot_gpu_hours_score_raw"
+  service_metric: "hp_gang_violation_rate"
+  service_violation_limit: 0.02
+baselines:
+  gfs_ref:
+    status: "ready"
+    family: "reference"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  contextual_linear:
+    status: "ready"
+    family: "quota_control"
+    policy_type: "contextual_linear_residual"
+    action_artifact: "fitted/non_rl_contextual_linear.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  gfs_srlinear:
+    status: "ready"
+    family: "forecast_isolation"
+    stochastic: true
+    forecast_intervention: &srlinear_gaussian
+      type: "srlinear_online"
+      mode: "residual_gaussian"
+      forecast_suite: "forecast_suite.yaml"
+      calibration_artifact: "fitted/srlinear_quota_calibration.json"
+      device: "auto"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  gfs_srlinear_contextual:
+    status: "ready"
+    family: "forecast_and_quota_control"
+    stochastic: true
+    forecast_intervention: *srlinear_gaussian
+    policy_type: "contextual_linear_residual"
+    action_artifact: "fitted/srlinear_contextual_linear.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  srgfs_contextual_mix:
+    status: "ready"
+    family: "proposed_non_rl_method"
+    stochastic: true
+    scheduler_profile: "srgfs_cost_aware"
+    forecast_intervention:
+      <<: *srlinear_gaussian
+      native_safe_artifact: "fitted/srgfs_contextual_mix.json"
+    policy_type: "srgfs_contextual_mix"
+    action_artifact: "fitted/srgfs_contextual_mix.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

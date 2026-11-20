@@ -1,0 +1,91 @@
+schema_version: "1.0"
+suite_id: "a100_scheduling_baselines_v1"
+environment:
+  root: "../environment"
+  protocol: "../environment/protocol.yaml"
+  freeze_lock: "../environment/FROZEN_SHA256SUMS"
+  configs:
+    train: "../environment/configs/natural_train.yaml"
+    val: "../environment/configs/natural_val.yaml"
+  output_root: "../runs/scheduling_baselines"
+  test_policy: "locked"
+resources:
+  simulator_device: "cpu"
+  policy_device: "auto"
+  independent_workers: 2
+  threads_per_worker: 4
+randomness:
+  master_seed: 17
+  deterministic_seed_derivation: "master_seed_identity_v1"
+  stochastic_seed_count: 3
+  stochastic_seed_derivation: "numpy_seedsequence_spawn_uint32_v1"
+deterministic_execution:
+  epochs: 0
+  iterations: 0
+  complete_replays_per_split: 1
+  full_seed_repetitions: 1
+  expected_seed_variance: 0
+comparison:
+  primary_metric: "useful_spot_gpu_hours_score_raw"
+  service_metric: "hp_gang_violation_rate"
+  service_violation_limit: 0.02
+baselines:
+  gfs_ref:
+    status: "ready"
+    family: "reference"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  fifo_admission:
+    status: "ready"
+    family: "admission"
+    action: [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  shortest_causal_estimate_first:
+    status: "ready"
+    family: "admission"
+    requires_duration_estimator: true
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0]
+  fixed_headroom_quota:
+    status: "ready"
+    family: "quota"
+    policy_type: "current_free_headroom"
+    action_artifact: "fitted/fixed_headroom_quota.json"
+    priority_weights: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  yarn_cs_source_compatible:
+    status: "ready"
+    family: "literature_scheduler"
+    scheduler_profile: "yarn_cs_source_compatible"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  chronus_source_compatible:
+    status: "ready"
+    family: "literature_scheduler"
+    scheduler_profile: "chronus_source_compatible"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  lyra_source_compatible:
+    status: "ready"
+    family: "literature_scheduler"
+    scheduler_profile: "lyra_source_compatible"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  fgd_source_compatible:
+    status: "ready"
+    family: "literature_scheduler"
+    scheduler_profile: "fgd_source_compatible"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  capacity_open_fcfs_best_fit_probe:
+    status: "ready"
+    family: "mechanism_probe"
+    scheduler_profile: "capacity_open_fcfs_best_fit_probe"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  staggered_lease_best_fit_probe:
+    status: "ready"
+    family: "mechanism_probe"
+    scheduler_profile: "staggered_lease_best_fit_probe"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  whole_card_cost_best_fit_probe:
+    status: "ready"
+    family: "mechanism_probe"
+    scheduler_profile: "whole_card_cost_best_fit_probe"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  whole_card_fgd_probe:
+    status: "ready"
+    family: "mechanism_probe"
+    scheduler_profile: "whole_card_fgd_probe"
+    action: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

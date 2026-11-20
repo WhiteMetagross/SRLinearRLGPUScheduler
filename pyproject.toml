@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research_sim"
+version = "0.1.0"
+description = "Maintained GFS research simulator and RL decision environment"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.4.1",
+    "numpy>=2.0.2",
+    "pandas>=2.2.2",
+    "scipy>=1.13.1",
+    "scikit-learn>=1.5.1",
+    "matplotlib>=3.9.2",
+    "chinese-calendar>=1.11.0",
+    "pyyaml>=6.0.3",
+    "gymnasium>=1.3.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=9.1.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["environment/src"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "environment/src"]
+testpaths = ["tests"]

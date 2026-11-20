@@ -1,0 +1,130 @@
+schema_version: "1.0"
+suite_id: "a100_srlinear_risk_rl_v1"
+environment:
+  base_suite: "non_rl_suite.yaml"
+  protocol: "../environment/protocol.yaml"
+  test_policy: "locked"
+  output_root: "../runs/srlinear_risk_rl"
+resources:
+  policy_device: "auto"
+  forecast_device: "auto"
+  simulator_device: "cpu"
+  forecast_cache_dir: "../runs/srlinear_forecast_cache"
+  independent_run_workers: 1
+  threads_per_worker: 4
+  parallel_across_methods: false
+  progress_every_steps: 64
+  method_execution_order:
+    - "sr_utility_ppo"
+    - "sr_pid_ppo"
+    - "sr_priority_pid"
+    - "srguard_pid"
+randomness:
+  master_seed: 17
+  deterministic_seed_derivation: "master_seed_identity_v1"
+  stochastic_seed_count: 3
+  stochastic_seed_derivation: "numpy_seedsequence_spawn_uint32_v1"
+algorithm:
+  name: "constrained_recurrent_ppo"
+  hidden_size: 32
+  initial_log_std: -1.2
+  rollout_steps: 288
+  ppo_epochs: 2
+  learning_rate: 0.0003
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_epsilon: 0.2
+  value_coefficient: 0.5
+  entropy_coefficient: 0.003
+  max_grad_norm: 0.5
+  dual_learning_rate: 0.02
+  pid_kp: 0.05
+  pid_ki: 0.005
+  pid_kd: 0.02
+  pid_ema_alpha: 0.9
+  burn_in_steps: 32
+  train_passes: 1
+  checkpoint_every_updates: 4
+constraints:
+  hp_violation_rate_limit: 0.02
+  lost_gpu_hours_per_score_hour: 0.9781388888888889
+  hp_queue_gpu_hours_per_score_hour: 4.585277777777778
+  validation_reference:
+    lost_gpu_hours: 704.26
+    hp_queue_gpu_hours: 3301.40
+    validation_hours: 720
+safety:
+  max_policy_delta_fraction: 0.05
+  max_delta_change_fraction: 0.01
+  minimum_total_residual: -0.15
+  maximum_total_residual: 0.15
+  block_positive_on_hp_queue: true
+  block_positive_after_budget_exhaustion: true
+  srlinear_never_exceed_forecast_base: true
+  smoothness_penalty: 0.01
+selection:
+  reference_baseline: "gfs_srlinear"
+  primary_gate:
+    metric: "useful_spot_gpu_hours"
+    minimum_reference_ratio: 0.999
+  service_gates:
+    hp_gang_violation_rate_maximum: 0.02
+    spot_queue_gpu_hours_maximum_reference_ratio: 1.05
+  optimization_order:
+    - "lost_gpu_hours"
+    - "hp_queue_gpu_hours"
+    - "spot_queue_gpu_hours"
+  paired_block: "calendar_day"
+  confidence_level: 0.95
+  maximum_shield_rate: 0.90
+  locked_test_split: "August"
+methods:
+  sr_utility_ppo:
+    name: "SR Utility PPO"
+    base_baseline: "gfs_srlinear"
+    include_forecast_features: true
+    action_mode: "continuous_protective"
+    dual_mode: "integral"
+    reward_weights:
+      useful_spot_gpu_hours: 1.0
+      spot_queue_gpu_hours: 1.0
+      lost_gpu_hours: 1.0
+      hp_queue_gpu_hours_proxy: 0.0
+    claim: "Optimize the frozen operational utility while retaining explicit service budgets."
+  sr_pid_ppo:
+    name: "SR PID PPO"
+    base_baseline: "gfs_srlinear"
+    include_forecast_features: true
+    action_mode: "continuous_protective"
+    dual_mode: "pid"
+    reward_weights:
+      useful_spot_gpu_hours: 1.0
+      spot_queue_gpu_hours: 1.0
+      lost_gpu_hours: 1.0
+      hp_queue_gpu_hours_proxy: 0.0
+    claim: "Replace the integral dual update with PID constraint control."
+  sr_priority_pid:
+    name: "SR Priority PID"
+    base_baseline: "gfs_srlinear"
+    include_forecast_features: true
+    action_mode: "continuous_protective"
+    dual_mode: "pid"
+    reward_weights:
+      useful_spot_gpu_hours: 1.0
+      spot_queue_gpu_hours: 0.1
+      lost_gpu_hours: 2.0
+      hp_queue_gpu_hours_proxy: 0.1
+    claim: "Preserve useful work while giving rollback loss first secondary priority."
+  srguard_pid:
+    name: "SRGuard PID"
+    base_baseline: "gfs_srlinear"
+    include_forecast_features: true
+    action_mode: "discrete_protective"
+    protection_levels: [0.0, 0.25, 0.5, 1.0]
+    dual_mode: "pid"
+    reward_weights:
+      useful_spot_gpu_hours: 1.0
+      spot_queue_gpu_hours: 0.25
+      lost_gpu_hours: 3.0
+      hp_queue_gpu_hours_proxy: 0.25
+    claim: "Select a small discrete protection level only when forecast and queue risk justify it."

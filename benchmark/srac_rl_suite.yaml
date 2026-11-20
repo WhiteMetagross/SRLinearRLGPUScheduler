@@ -1,0 +1,87 @@
+schema_version: "1.0"
+suite_id: "a100_srlinear_risk_adaptive_controller_v1"
+parity_result: "results/srac_zero_action_parity.json"
+environment:
+  base_suite: "non_rl_suite.yaml"
+  protocol: "../environment/protocol.yaml"
+  test_policy: "locked"
+  output_root: "../runs/srac_rl"
+resources:
+  policy_device: "auto"
+  forecast_device: "auto"
+  simulator_device: "cpu"
+  forecast_cache_dir: "../runs/srlinear_forecast_cache"
+  independent_run_workers: 2
+  threads_per_worker: 4
+  parallel_across_methods: false
+  progress_every_steps: 64
+  method_execution_order:
+    - "srac"
+randomness:
+  master_seed: 17
+  deterministic_seed_derivation: "master_seed_identity_v1"
+  stochastic_seed_count: 3
+  stochastic_seed_derivation: "numpy_seedsequence_spawn_uint32_v1"
+algorithm:
+  name: "lagrangian_recurrent_ppo"
+  hidden_size: 64
+  initial_log_std: -1.5
+  rollout_steps: 256
+  ppo_epochs: 4
+  learning_rate: 0.0003
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_epsilon: 0.2
+  value_coefficient: 0.5
+  entropy_coefficient: 0.005
+  max_grad_norm: 0.5
+  dual_learning_rate: 0.02
+  burn_in_steps: 64
+  train_passes: 1
+  checkpoint_every_updates: 4
+constraints:
+  hp_violation_rate_limit: 0.02
+  lost_gpu_hours_per_score_hour: 0.9781388888888889
+  hp_queue_gpu_hours_per_score_hour: 4.585277777777778
+  validation_reference:
+    lost_gpu_hours: 704.26
+    hp_queue_gpu_hours: 3301.40
+    validation_hours: 720
+safety:
+  max_policy_delta_fraction: 0.05
+  max_delta_change_fraction: 0.01
+  minimum_total_residual: -0.15
+  maximum_total_residual: 0.15
+  block_positive_on_hp_queue: true
+  block_positive_after_budget_exhaustion: true
+  srlinear_never_exceed_forecast_base: true
+  smoothness_penalty: 0.01
+  max_mix_change: 0.25
+  max_uncertainty_change: 0.25
+selection:
+  reference_baseline: "contextual_linear"
+  forecast_control: "gfs_srlinear"
+  primary_metric: "useful_spot_gpu_hours"
+  required_reference_ratio: 0.999
+  secondary_metrics:
+    - "lost_gpu_hours"
+    - "hp_queue_gpu_hours"
+    - "spot_queue_gpu_hours"
+  paired_block: "calendar_day"
+  confidence_level: 0.95
+  maximum_shield_rate: 0.90
+  locked_test_split: "August"
+methods:
+  srac:
+    name: "SRLinear Risk Adaptive Controller"
+    base_baseline: "contextual_linear"
+    forecast_baseline: "srgfs_contextual_mix"
+    include_forecast_features: true
+    action_mode: "srac_mix"
+    dual_mode: "integral"
+    reward_weights:
+      useful_spot_gpu_hours: 1.0
+      spot_queue_gpu_hours: 0.05
+      lost_gpu_hours: 4.0
+      hp_queue_gpu_hours_proxy: 1.0
+    claim: "Dynamically mix Contextual Linear and SRLinear quotas with uncertainty protection under explicit HP and rollback budgets."

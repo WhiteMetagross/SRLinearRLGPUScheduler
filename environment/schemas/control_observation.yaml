@@ -1,0 +1,34 @@
+schema_id: "research_sim_unified_control_observation"
+version: "4.0"
+decision_time: "After the causal base quota update and before scheduling at each 300 second tick."
+fields:
+  global_features:
+    shape: [12]
+    bounds: "[0, 1]"
+    names:
+      - "hp_used_fraction"
+      - "spot_used_fraction"
+      - "free_fraction"
+      - "base_quota_fraction"
+      - "spot_queue_count_squashed"
+      - "spot_queue_demand_squashed"
+      - "hp_queue_count_squashed"
+      - "hp_queue_demand_squashed"
+      - "eviction_failure_rate"
+      - "day_sin_scaled"
+      - "day_cos_scaled"
+      - "score_progress"
+  queue_features:
+    shape: [64, 6]
+    bounds: "[0, 1]"
+    order: "Native GFS queue order before applying the new interval weights."
+  queue_mask:
+    shape: [64]
+    dtype: "bool"
+causality:
+  includes: "Present allocation, queues, causal forecast quota, past eviction outcomes, and causal duration estimates."
+  excludes:
+    - "future arrivals"
+    - "trace known completion time"
+    - "trace known duration or remaining duration"
+    - "validation or test outcomes"
