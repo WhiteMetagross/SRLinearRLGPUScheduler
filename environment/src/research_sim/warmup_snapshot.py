@@ -650,4 +650,3 @@ def generate_warmup_snapshot(
         raise ResearchSimError(f"Failed to generate warmup snapshot at {snapshot_path}")
 
     return snapshot_path
-

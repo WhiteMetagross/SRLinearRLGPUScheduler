@@ -182,4 +182,3 @@ bash build.sh
 ## License:
 
 The repository is released under GNU General Public License version 3. The GFS derived code retains its original license notice under `environment/src/research_sim/gfs/LICENSE`.
-

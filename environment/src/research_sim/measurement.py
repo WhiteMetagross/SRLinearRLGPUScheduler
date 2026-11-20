@@ -358,7 +358,7 @@ def reduce_replay_events(
     spot_attempt_indices: Dict[Any, int] = {}
     active_spot_attempts: Dict[Any, Tuple[int, int]] = {}
     next_credit_sequence: Dict[Tuple[Any, int], int] = {}
-    
+
     # HP job tracking: job_id -> info
     hp_arrivals: Dict[Any, Dict[str, Any]] = {}
     all_arrival_ids: Set[Any] = set()
@@ -470,7 +470,7 @@ def reduce_replay_events(
                         f"Spot credit exceeds physical job service for {jid} at seq {ev['event_seq']}."
                     )
             all_credit_seconds_list.append(gpu_sec)
-            
+
             # Unique credit key enforcement: (job_id, attempt_index, credit_sequence)
             att_idx = details["attempt_index"]
             c_seq = details["credit_sequence"]

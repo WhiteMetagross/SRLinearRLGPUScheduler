@@ -373,4 +373,3 @@ class BudgetManager:
 
         return executed, actual_calls, result
 
-

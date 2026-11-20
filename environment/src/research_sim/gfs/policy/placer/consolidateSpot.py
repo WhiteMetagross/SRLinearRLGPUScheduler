@@ -126,4 +126,3 @@ class ConsolidateSpotPlacement:
                     break
 
         return min(count, limit)
-

@@ -1540,4 +1540,3 @@ def finalize_run_artifacts(run_dir: str, status: str = "COMPLETED") -> Dict[str,
 if __name__ == "__main__":
     main()
 
-

@@ -634,4 +634,3 @@ def load_risk_checkpoint(
 
     model.is_fitted = True
     return model
-

@@ -118,4 +118,3 @@ def test_fixed_protocol_parameter_and_flop_counts(tmp_path: Path) -> None:
         expansion=2,
     ) == 17_110_016
 
-
